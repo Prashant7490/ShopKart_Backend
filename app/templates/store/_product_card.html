@@ -1,0 +1,32 @@
+<div class="product-card card">
+  <a href="/product/{{ p.id }}" class="card-img-wrap">
+    <img src="{{ p.image_url }}" alt="{{ p.name }}" class="card-img" loading="lazy"/>
+    {% if p.discount_percent >= 20 %}
+    <span class="discount-badge">{{ p.discount_percent }}% off</span>
+    {% endif %}
+  </a>
+  <div class="card-body">
+    <a href="/product/{{ p.id }}">
+      <p class="card-brand">{{ p.brand }}</p>
+      <h3 class="card-name">{{ p.name }}</h3>
+    </a>
+    <div class="card-meta">
+      <span class="stars {% if p.rating < 3.5 %}very-low{% elif p.rating < 4 %}low{% endif %}">★ {{ p.rating }}</span>
+      <span class="review-count">({{ "{:,}".format(p.review_count) }})</span>
+      {% if p.assured %}<span class="badge-assured">✓ Assured</span>{% endif %}
+    </div>
+    <div class="card-pricing">
+      <span class="price-main">₹{{ "{:,}".format(p.price|int) }}</span>
+      <span class="price-original">₹{{ "{:,}".format(p.original_price|int) }}</span>
+      <span class="price-discount">{{ p.discount_percent }}% off</span>
+    </div>
+    {% if p.free_delivery %}
+    <p class="badge-free-delivery">🚚 Free Delivery</p>
+    {% endif %}
+    <button class="add-btn {% if p.id in cart_ids %}in-cart{% endif %}"
+            onclick="addToCart('{{ p.id }}', this)"
+            {% if p.id in cart_ids %}disabled{% endif %}>
+      {% if p.id in cart_ids %}✓ Added{% else %}+ Add to Cart{% endif %}
+    </button>
+  </div>
+</div>

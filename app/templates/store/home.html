@@ -1,0 +1,113 @@
+{% extends "store/base.html" %}
+{% block title %}ShopKart — India's Favourite Online Store{% endblock %}
+
+{% block content %}
+
+<!-- Hero Banner -->
+<div class="hero-banner" id="hero">
+  <div class="hero-slide active" style="background:linear-gradient(135deg,#1a237e,#283593)">
+    <div class="container hero-inner">
+      <div>
+        <p class="hero-sub">🔥 Limited Time Offer</p>
+        <h1 class="hero-title">Electronics Sale</h1>
+        <p class="hero-desc">Up to 70% off on top brands</p>
+        <a href="/products?category=electronics" class="btn-primary" style="margin-top:24px;display:inline-flex">Shop Now →</a>
+      </div>
+      <div class="hero-emoji">📱</div>
+    </div>
+  </div>
+  <div class="hero-slide" style="background:linear-gradient(135deg,#b71c1c,#c62828)">
+    <div class="container hero-inner">
+      <div>
+        <p class="hero-sub">👗 Fashion Fiesta</p>
+        <h1 class="hero-title">Style Up Now</h1>
+        <p class="hero-desc">Trendy looks at unbeatable prices</p>
+        <a href="/products?category=fashion" class="btn-primary" style="margin-top:24px;display:inline-flex">Explore →</a>
+      </div>
+      <div class="hero-emoji">👗</div>
+    </div>
+  </div>
+  <div class="hero-slide" style="background:linear-gradient(135deg,#1b5e20,#2e7d32)">
+    <div class="container hero-inner">
+      <div>
+        <p class="hero-sub">🏠 Home Essentials</p>
+        <h1 class="hero-title">Make it Beautiful</h1>
+        <p class="hero-desc">Premium home & kitchen products</p>
+        <a href="/products?category=home" class="btn-primary" style="margin-top:24px;display:inline-flex">Shop Now →</a>
+      </div>
+      <div class="hero-emoji">🏠</div>
+    </div>
+  </div>
+  <div class="banner-dots" id="bannerDots"></div>
+</div>
+
+<!-- Categories -->
+<div class="container section">
+  <div class="section-header">
+    <h2 class="section-title">Shop by Category</h2>
+    <a href="/products" class="view-all">View All →</a>
+  </div>
+  <div class="categories-grid">
+    {% for cat in categories %}
+    <a href="/products?category={{ cat.id }}" class="cat-card card">
+      <span class="cat-icon">{{ cat.icon }}</span>
+      <p class="cat-name">{{ cat.name }}</p>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Featured Products -->
+<div class="container section">
+  <div class="section-header">
+    <h2 class="section-title">⚡ Featured Products</h2>
+    <a href="/products" class="view-all">View All →</a>
+  </div>
+  <div class="products-grid">
+    {% for p in featured %}
+    {% include "store/_product_card.html" %}
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Offer Strips -->
+<div class="container offers-row">
+  {% set offers = [('🚚','Free Delivery','On orders above ₹499'),('↩️','Easy Returns','7-day hassle-free return'),('🔒','Secure Payment','100% safe checkout'),('🎁','Best Deals','Guaranteed best price')] %}
+  {% for icon, title, sub in offers %}
+  <div class="offer-card card">
+    <span class="offer-icon">{{ icon }}</span>
+    <div>
+      <p class="offer-title">{{ title }}</p>
+      <p class="offer-sub">{{ sub }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Hero banner auto-slide
+  const slides = document.querySelectorAll('.hero-slide');
+  const dotsWrap = document.getElementById('bannerDots');
+  let current = 0;
+
+  slides.forEach((_, i) => {
+    const d = document.createElement('button');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsWrap.appendChild(d);
+  });
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    dotsWrap.children[current].classList.remove('active');
+    current = n;
+    slides[current].classList.add('active');
+    dotsWrap.children[current].classList.add('active');
+  }
+
+  setInterval(() => goTo((current + 1) % slides.length), 4000);
+</script>
+{% endblock %}

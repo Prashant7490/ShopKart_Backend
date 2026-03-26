@@ -1,0 +1,112 @@
+{% extends "store/base.html" %}
+{% block title %}My Profile — ShopKart{% endblock %}
+
+{% block content %}
+<div class="profile-page container">
+
+  <div class="profile-grid">
+    <!-- Sidebar -->
+    <div class="profile-sidebar card">
+      <div class="profile-avatar">{{ current_user.name[0].upper() }}</div>
+      <p class="profile-name">{{ current_user.name }}</p>
+      <p class="profile-email">{{ current_user.email }}</p>
+      {% if current_user.phone %}<p class="profile-phone">📱 {{ current_user.phone }}</p>{% endif %}
+      <p class="profile-joined">Member since {{ fmt_date(current_user.created_at) }}</p>
+      <nav class="profile-nav">
+        <a href="#edit"     class="pnav active">✏️ Edit Profile</a>
+        <a href="#orders"   class="pnav">📦 Recent Orders</a>
+        <a href="#address"  class="pnav">📍 Addresses</a>
+        <a href="/wishlist" class="pnav">❤️ Wishlist</a>
+        <a href="/logout"   class="pnav" style="color:#e23f40">🚪 Logout</a>
+      </nav>
+    </div>
+
+    <!-- Main -->
+    <div class="profile-main">
+
+      {% if request.query_params.get('updated') %}
+      <div class="alert alert-success">✅ Profile updated successfully!</div>
+      {% endif %}
+      {% if request.query_params.get('addr') %}
+      <div class="alert alert-success">✅ Address saved!</div>
+      {% endif %}
+
+      <!-- Edit Profile -->
+      <div class="profile-section card" id="edit">
+        <h3 class="section-head">✏️ Edit Profile</h3>
+        <form method="POST" action="/profile/update" class="form-grid">
+          <div class="form-field">
+            <label>Full Name</label>
+            <input type="text" name="name" value="{{ current_user.name }}" required/>
+          </div>
+          <div class="form-field">
+            <label>Email <span style="color:var(--text-light);font-size:12px">(cannot change)</span></label>
+            <input type="email" value="{{ current_user.email }}" disabled style="background:#f5f5f5"/>
+          </div>
+          <div class="form-field">
+            <label>Mobile Number</label>
+            <input type="tel" name="phone" value="{{ current_user.phone }}" placeholder="9876543210"/>
+          </div>
+          <div class="form-field full-width" style="margin-top:4px">
+            <button type="submit" class="btn-blue" style="width:auto;padding:10px 28px">Save Changes</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Recent Orders -->
+      <div class="profile-section card" id="orders">
+        <h3 class="section-head">📦 Recent Orders</h3>
+        {% if recent_orders %}
+        <div class="mini-orders">
+          {% for order in recent_orders %}
+          <a href="/orders/{{ order.id }}" class="mini-order">
+            <div>
+              <p class="mo-id">#{{ order.id }}</p>
+              <p class="mo-date">{{ fmt_date(order.created_at) }}</p>
+            </div>
+            <div>
+              <p class="mo-amount">₹{{ "{:,.0f}".format(order.total_amount) }}</p>
+              <span class="order-status" style="background:{{'#388e3c' if order.status=='Confirmed' else '#1565c0' if order.status=='Shipped' else '#2e7d32' if order.status=='Delivered' else '#c62828'}}">
+                {{ order.status }}
+              </span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        <a href="/orders" class="view-all" style="display:block;margin-top:12px">View all orders →</a>
+        {% else %}
+        <p style="color:var(--text-light)">No orders yet. <a href="/products">Start shopping!</a></p>
+        {% endif %}
+      </div>
+
+      <!-- Addresses -->
+      <div class="profile-section card" id="address">
+        <h3 class="section-head">📍 Saved Addresses</h3>
+        {% if addresses %}
+        <div class="address-grid">
+          {% for addr in addresses %}
+          <div class="addr-card">
+            <p class="addr-name">{{ addr.name }}</p>
+            <p class="addr-detail">{{ addr.street }}, {{ addr.city }}, {{ addr.state }} - {{ addr.pincode }}</p>
+            <p class="addr-phone">📱 {{ addr.phone }}</p>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <details style="margin-top:16px">
+          <summary class="btn-blue" style="display:inline-flex;padding:10px 20px;cursor:pointer;list-style:none">+ Add New Address</summary>
+          <form method="POST" action="/profile/add-address" class="form-grid" style="margin-top:16px">
+            {% for field, ph in [('name','Full Name'),('phone','Phone'),('pincode','Pincode'),('city','City'),('state','State')] %}
+            <div class="form-field"><label>{{ ph }}</label><input type="text" name="{{ field }}" placeholder="{{ ph }}" required/></div>
+            {% endfor %}
+            <div class="form-field full-width"><label>Street Address</label><textarea name="street" rows="2" placeholder="House no, Street, Area" required></textarea></div>
+            <div class="form-field full-width"><button type="submit" class="btn-blue" style="width:auto;padding:10px 24px">Save Address</button></div>
+          </form>
+        </details>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

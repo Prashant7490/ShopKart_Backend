@@ -1,0 +1,83 @@
+{% extends "store/base.html" %}
+{% block title %}Products — ShopKart{% endblock %}
+
+{% block content %}
+<div class="products-page container">
+
+  <!-- Sidebar Filters -->
+  <aside class="sidebar card">
+    <h3 class="sidebar-title">Filters</h3>
+
+    <form method="GET" action="/products" id="filterForm">
+      <!-- Keep sort and search -->
+      <input type="hidden" name="sort_by" value="{{ current_sort }}"/>
+      {% if current_search %}<input type="hidden" name="search" value="{{ current_search }}"/>{% endif %}
+
+      <div class="filter-group">
+        <p class="filter-label">CATEGORY</p>
+        <label class="filter-radio">
+          <input type="radio" name="category" value="" {% if not current_category %}checked{% endif %} onchange="this.form.submit()"/>
+          <span>All Categories</span>
+        </label>
+        {% for cat in categories %}
+        <label class="filter-radio">
+          <input type="radio" name="category" value="{{ cat.id }}"
+                 {% if current_category == cat.id %}checked{% endif %}
+                 onchange="this.form.submit()"/>
+          <span>{{ cat.icon }} {{ cat.name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+
+      <div class="filter-group">
+        <p class="filter-label">PRICE RANGE</p>
+        <div class="price-inputs">
+          <input type="number" name="min_price" placeholder="Min ₹" value="{{ min_price }}"/>
+          <span>–</span>
+          <input type="number" name="max_price" placeholder="Max ₹" value="{{ max_price }}"/>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button type="submit" class="apply-btn">Apply</button>
+          <a href="/products{% if current_category %}?category={{ current_category }}{% endif %}" class="clear-btn">Clear</a>
+        </div>
+      </div>
+    </form>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="products-main">
+    <div class="products-topbar card">
+      <div>
+        <span class="result-count">{{ products|length }} Results</span>
+        {% if current_search %}
+        <span class="active-filter">"{{ current_search }}"</span>
+        {% elif current_category %}
+        <span class="active-filter">{{ current_category }}</span>
+        {% endif %}
+      </div>
+      <div class="sort-row">
+        <span class="sort-label">Sort By:</span>
+        {% for val, label in [('popularity','Popularity'),('price_asc','Price: Low to High'),('price_desc','Price: High to Low'),('rating','Rating')] %}
+        <a href="/products?category={{ current_category }}&search={{ current_search }}&sort_by={{ val }}&min_price={{ min_price }}&max_price={{ max_price }}"
+           class="sort-btn {% if current_sort == val %}active{% endif %}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if products %}
+    <div class="products-grid-main">
+      {% for p in products %}
+      {% include "store/_product_card.html" %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state card">
+      <div class="emoji">🔍</div>
+      <h3>No products found</h3>
+      <p>Try adjusting your filters or search term</p>
+      <a href="/products" class="btn-blue" style="margin-top:20px;display:inline-flex">Clear Filters</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

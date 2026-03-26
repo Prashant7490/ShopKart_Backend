@@ -1,0 +1,152 @@
+{% extends "store/base.html" %}
+{% block title %}{{ product.name }} — ShopKart{% endblock %}
+
+{% block content %}
+<div class="detail-page container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="/">Home</a> ›
+    <a href="/products?category={{ product.category }}" style="text-transform:capitalize">{{ product.category }}</a> ›
+    <span class="bc-current">{{ product.name[:50] }}{% if product.name|length > 50 %}...{% endif %}</span>
+  </div>
+
+  <div class="detail-grid">
+
+    <!-- Images -->
+    <div class="img-section card">
+      <div class="main-img-wrap">
+        <img src="{{ product.images[0] if product.images else product.image_url }}"
+             alt="{{ product.name }}" class="main-img" id="mainImg"/>
+        {% if product.discount_percent >= 10 %}
+        <span class="detail-badge">{{ product.discount_percent }}% OFF</span>
+        {% endif %}
+      </div>
+      <div class="thumb-row">
+        {% for img in product.images %}
+        <img src="{{ img }}" alt="" class="thumb {% if loop.first %}active{% endif %}"
+             onclick="switchImg(this, '{{ img }}')"/>
+        {% endfor %}
+      </div>
+      <div class="action-btns" style="margin-top:20px;display:flex;gap:12px">
+        <button class="btn-primary" style="flex:1;justify-content:center"
+                onclick="addToCartAndGo('{{ product.id }}')">
+          🛒 {% if in_cart %}Go to Cart{% else %}Add to Cart{% endif %}
+        </button>
+        <button class="btn-blue" style="flex:1;justify-content:center"
+                onclick="buyNow('{{ product.id }}')">
+          ⚡ Buy Now
+        </button>
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="info-section">
+      <p class="detail-brand">{{ product.brand }}</p>
+      <h1 class="detail-name">{{ product.name }}</h1>
+
+      <div class="rating-row">
+        <span class="stars {% if product.rating < 3.5 %}very-low{% elif product.rating < 4 %}low{% endif %}">
+          ★ {{ product.rating }}
+        </span>
+        <span class="rating-count">{{ "{:,}".format(product.review_count) }} Ratings</span>
+        <span style="color:var(--text-light)">•</span>
+        <span class="rating-count">{{ "{:,}".format(product.sold_count) }} sold</span>
+        {% if product.assured %}<span class="badge-assured">✓ Assured</span>{% endif %}
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="detail-pricing">
+        <span class="detail-price">₹{{ "{:,}".format(product.price|int) }}</span>
+        <span class="price-original" style="font-size:18px;margin-left:12px">₹{{ "{:,}".format(product.original_price|int) }}</span>
+        <span class="price-discount" style="font-size:18px;margin-left:8px">{{ product.discount_percent }}% off</span>
+      </div>
+      <p style="color:#388e3c;font-size:13px;margin-top:4px">
+        You save ₹{{ "{:,}".format((product.original_price - product.price)|int) }}
+      </p>
+
+      <div class="delivery-row">
+        <span style="font-size:20px">🚚</span>
+        <div>
+          <span style="font-weight:600">{% if product.free_delivery %}Free Delivery{% else %}Delivery charges apply{% endif %}</span>
+          <span style="color:var(--text-light);margin-left:8px;font-size:13px">by Tomorrow</span>
+        </div>
+      </div>
+
+      <!-- Quantity -->
+      <div class="qty-row">
+        <span style="font-weight:600;margin-right:12px">Quantity:</span>
+        <button class="qty-btn" onclick="changeQty(-1)">−</button>
+        <span class="qty-val" id="qtyVal">1</span>
+        <button class="qty-btn" onclick="changeQty(1)">+</button>
+        <span style="font-size:12px;color:var(--text-light);margin-left:12px">{{ product.stock }} in stock</span>
+      </div>
+
+      <!-- Highlights -->
+      <div class="highlights card">
+        <p class="hl-title">Product Highlights</p>
+        <p class="hl-desc">{{ product.description }}</p>
+        <div class="tags-row">
+          {% for tag in product.tags %}
+          <a href="/products?search={{ tag }}" class="tag">#{{ tag }}</a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Offers -->
+      <div class="offers-box card">
+        <p class="hl-title">Available Offers</p>
+        <ul class="offers-list">
+          <li>🏦 <strong>Bank Offer:</strong> 5% cashback on ShopKart Axis Bank Card</li>
+          <li>🎁 <strong>Partner Offer:</strong> Get GST invoice & save up to 28%</li>
+          <li>💳 <strong>No Cost EMI:</strong> Starting from ₹{{ "{:,}".format((product.price/12)|int) }}/month</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Related Products -->
+  {% if related %}
+  <div class="section" style="margin-top:32px">
+    <div class="section-header">
+      <h2 class="section-title">Similar Products</h2>
+    </div>
+    <div class="products-grid">
+      {% set cart_ids = [] %}
+      {% for p in related %}
+      {% include "store/_product_card.html" %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let qty = 1;
+  const maxStock = {{ product.stock }};
+
+  function changeQty(delta) {
+    qty = Math.min(maxStock, Math.max(1, qty + delta));
+    document.getElementById('qtyVal').textContent = qty;
+  }
+
+  function switchImg(el, src) {
+    document.getElementById('mainImg').src = src;
+    document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  async function addToCartAndGo(productId) {
+    await addToCart(productId, null, qty);
+    window.location.href = '/cart';
+  }
+
+  async function buyNow(productId) {
+    await addToCart(productId, null, qty);
+    window.location.href = '/checkout';
+  }
+</script>
+{% endblock %}

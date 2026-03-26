@@ -1,0 +1,249 @@
+{% extends "store/base.html" %}
+{% block title %}Checkout — ShopKart{% endblock %}
+
+{% block content %}
+<div class="checkout-page container">
+  <div class="checkout-steps">
+    <div class="step-tab active" id="step1Tab"><span class="step-num">1</span> Delivery Address</div>
+    <div class="step-tab" id="step2Tab"><span class="step-num">2</span> Payment</div>
+    <div class="step-tab" id="step3Tab"><span class="step-num">3</span> Review</div>
+  </div>
+
+  <div class="checkout-grid">
+    <div class="checkout-main">
+
+      <!-- STEP 1: Address -->
+      <div class="card checkout-form" id="step1Panel">
+        <h3 class="form-title">📍 Delivery Address</h3>
+        {% if addresses %}
+        <p style="font-size:13px;font-weight:600;margin-bottom:10px">Saved Addresses:</p>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
+          {% for addr in addresses %}
+          <label class="addr-select-card">
+            <input type="radio" name="saved_addr" onchange="fillAddress(this)"
+              data-name="{{ addr.name }}" data-phone="{{ addr.phone }}" data-street="{{ addr.street }}"
+              data-city="{{ addr.city }}" data-state="{{ addr.state }}" data-pincode="{{ addr.pincode }}"/>
+            <div>
+              <p style="font-weight:600;font-size:14px">{{ addr.name }}</p>
+              <p style="font-size:12px;color:var(--text-light)">{{ addr.street }}, {{ addr.city }} - {{ addr.pincode }}</p>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+        <p style="font-size:12px;color:var(--text-light);margin-bottom:10px">— Or enter a new address —</p>
+        {% endif %}
+
+        <div class="form-grid">
+          {% for fid, ph, lbl in [('name','Rahul Sharma','Full Name'),('phone','9876543210','Mobile'),('pincode','380001','Pincode'),('city','Ahmedabad','City'),('state','Gujarat','State')] %}
+          <div class="form-field">
+            <label>{{ lbl }} *</label>
+            <input type="text" id="f-{{ fid }}" placeholder="{{ ph }}" required/>
+          </div>
+          {% endfor %}
+          <div class="form-field full-width">
+            <label>Street Address *</label>
+            <textarea id="f-street" rows="2" placeholder="House No, Building, Street, Area" required></textarea>
+          </div>
+        </div>
+        <button class="btn-blue" style="margin-top:16px" onclick="goStep2()">Continue to Payment →</button>
+      </div>
+
+      <!-- STEP 2: Payment -->
+      <div class="card checkout-form" id="step2Panel" style="display:none">
+        <h3 class="form-title">💳 Choose Payment Method</h3>
+        <div class="payment-tabs">
+          <button class="pay-tab active" onclick="selectGateway('razorpay',this)">🔷 Razorpay</button>
+          <button class="pay-tab" onclick="selectGateway('stripe',this)">🔵 Stripe</button>
+          <button class="pay-tab" onclick="selectGateway('cod',this)">💵 Cash on Delivery</button>
+        </div>
+
+        <div id="razorpayPanel" class="gateway-panel">
+          <p style="font-weight:600;margin-bottom:10px">🔒 Secure payment via Razorpay</p>
+          <div class="pay-methods-grid">
+            <span class="pay-chip">📱 UPI</span><span class="pay-chip">💳 Cards</span>
+            <span class="pay-chip">🏦 Net Banking</span><span class="pay-chip">📅 EMI</span>
+          </div>
+        </div>
+
+        <div id="stripePanel" class="gateway-panel" style="display:none">
+          <p style="font-weight:600;margin-bottom:12px">🔒 Secure payment via Stripe</p>
+          <div class="form-field"><label>Card Number</label>
+            <input type="text" id="stripe-card" placeholder="4242 4242 4242 4242" maxlength="19" oninput="formatCard(this)"/></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+            <div class="form-field"><label>Expiry (MM/YY)</label><input type="text" placeholder="12/26" maxlength="5"/></div>
+            <div class="form-field"><label>CVV</label><input type="text" placeholder="123" maxlength="3"/></div>
+          </div>
+          <div class="pay-methods-grid" style="margin-top:12px">
+            <span class="pay-chip">💳 Visa</span><span class="pay-chip">💳 Mastercard</span>
+            <span class="pay-chip">💳 Amex</span><span class="pay-chip">🌍 International</span>
+          </div>
+        </div>
+
+        <div id="codPanel" class="gateway-panel" style="display:none">
+          <p style="font-weight:600">💵 Cash on Delivery</p>
+          <p style="color:var(--text-light);font-size:13px;margin-top:8px">Pay in cash when your order arrives at your door.</p>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:20px">
+          <button class="btn-outline" onclick="goStep1()">← Back</button>
+          <button class="btn-blue" style="flex:1;justify-content:center" onclick="goStep3()">Review Order →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Review -->
+      <div class="card checkout-form" id="step3Panel" style="display:none">
+        <h3 class="form-title">✅ Review & Place Order</h3>
+        <div class="review-section">
+          <p class="review-label">📍 DELIVER TO</p>
+          <div id="reviewAddress" class="review-val"></div>
+        </div>
+        <div class="review-section">
+          <p class="review-label">💳 PAYMENT METHOD</p>
+          <div id="reviewPayment" class="review-val"></div>
+        </div>
+        <div class="review-section">
+          <p class="review-label">💰 TOTAL</p>
+          <div class="review-val" style="font-size:20px;font-weight:700">₹{{ "{:,.0f}".format(grand_total) }}</div>
+        </div>
+
+        <form id="orderForm" method="POST" action="/checkout/place-order">
+          <input type="hidden" name="name"    id="h-name"/>
+          <input type="hidden" name="phone"   id="h-phone"/>
+          <input type="hidden" name="pincode" id="h-pincode"/>
+          <input type="hidden" name="street"  id="h-street"/>
+          <input type="hidden" name="city"    id="h-city"/>
+          <input type="hidden" name="state"   id="h-state"/>
+          <input type="hidden" name="payment_method"        id="h-method" value="razorpay"/>
+          <input type="hidden" name="razorpay_payment_id"   id="h-rzp-pay"/>
+          <input type="hidden" name="razorpay_order_id_val" id="h-rzp-ord"/>
+        </form>
+
+        <div style="display:flex;gap:10px;margin-top:20px">
+          <button class="btn-outline" onclick="goStep2()">← Back</button>
+          <button class="btn-primary" style="flex:1;justify-content:center;font-size:15px" id="placeBtn"
+                  onclick="handlePlaceOrder()">⚡ Place Order — ₹{{ "{:,.0f}".format(grand_total) }}</button>
+        </div>
+        <p class="secure-note">🔒 100% Secure. SSL Encrypted payment.</p>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="checkout-summary card">
+      <h3 class="summary-title">ORDER SUMMARY</h3>
+      <div class="summary-row"><span>Subtotal</span><span>₹{{ "{:,.0f}".format(total) }}</span></div>
+      <div class="summary-row">
+        <span>Delivery</span>
+        <span {% if delivery==0 %}class="price-discount"{% endif %}>{% if delivery==0 %}FREE{% else %}₹{{ delivery }}{% endif %}</span>
+      </div>
+      <hr style="border:none;border-top:1px dashed var(--border);margin:10px 0"/>
+      <div class="summary-row total-row"><span>Total</span><span>₹{{ "{:,.0f}".format(grand_total) }}</span></div>
+      {% if delivery==0 %}<p class="savings-note">🎉 Free delivery!</p>{% endif %}
+      <a href="/cart" style="display:block;text-align:center;margin-top:14px;font-size:13px;color:var(--blue)">← Edit Cart</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+const RZP_KEY    = "{{ razorpay_key_id }}";
+const TOTAL_AMT  = {{ grand_total }};
+let gateway      = 'razorpay';
+
+function fillAddress(inp) {
+  document.getElementById('f-name').value    = inp.dataset.name;
+  document.getElementById('f-phone').value   = inp.dataset.phone;
+  document.getElementById('f-street').value  = inp.dataset.street;
+  document.getElementById('f-city').value    = inp.dataset.city;
+  document.getElementById('f-state').value   = inp.dataset.state;
+  document.getElementById('f-pincode').value = inp.dataset.pincode;
+}
+
+function selectGateway(gw, btn) {
+  gateway = gw;
+  document.querySelectorAll('.pay-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['razorpay','stripe','cod'].forEach(p => document.getElementById(p+'Panel').style.display = p===gw ? 'block' : 'none');
+}
+
+function showPanel(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('step'+i+'Panel').style.display = i===n?'block':'none';
+    const tab = document.getElementById('step'+i+'Tab');
+    tab.classList.toggle('active', i<=n);
+    tab.classList.toggle('done', i<n);
+  });
+  window.scrollTo(0,0);
+}
+
+function goStep2() {
+  for (const f of ['name','phone','street','city','state','pincode']) {
+    if (!document.getElementById('f-'+f).value.trim()) {
+      document.getElementById('f-'+f).focus(); showToast('Please fill: '+f); return;
+    }
+  }
+  showPanel(2);
+}
+function goStep1() { showPanel(1); }
+function goStep3() {
+  const name=document.getElementById('f-name').value, city=document.getElementById('f-city').value, pin=document.getElementById('f-pincode').value;
+  document.getElementById('reviewAddress').innerHTML = `<b>${name}</b><br>${document.getElementById('f-street').value},  ${city} – ${pin}`;
+  const labels = {razorpay:'🔷 Razorpay (UPI / Cards / NetBanking / EMI)', stripe:'🔵 Stripe (International Card)', cod:'💵 Cash on Delivery'};
+  document.getElementById('reviewPayment').textContent = labels[gateway];
+  showPanel(3);
+}
+
+function copyToHidden() {
+  for (const f of ['name','phone','pincode','street','city','state'])
+    document.getElementById('h-'+f).value = document.getElementById('f-'+f).value;
+  document.getElementById('h-method').value = gateway;
+}
+
+async function handlePlaceOrder() {
+  const btn = document.getElementById('placeBtn');
+  btn.disabled = true; btn.textContent = '⏳ Processing...';
+  copyToHidden();
+
+  if (gateway === 'cod' || gateway === 'stripe') {
+    document.getElementById('orderForm').submit(); return;
+  }
+
+  // Razorpay
+  try {
+    const res  = await fetch('/api/razorpay/create-order', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({amount: TOTAL_AMT})
+    });
+    const data = await res.json();
+
+    if (data.mock) {
+      // No real keys — test mode
+      document.getElementById('h-rzp-pay').value = 'mock_pay_'+Date.now();
+      document.getElementById('h-rzp-ord').value = data.razorpay_order_id;
+      showToast('✅ Mock payment success!');
+      setTimeout(()=> document.getElementById('orderForm').submit(), 800);
+      return;
+    }
+
+    const rzp = new Razorpay({
+      key: RZP_KEY, amount: data.amount, currency:'INR',
+      name:'ShopKart', description:'Order Payment',
+      order_id: data.razorpay_order_id,
+      prefill:{ name: document.getElementById('f-name').value, contact: document.getElementById('f-phone').value },
+      theme:{ color:'#2874f0' },
+      handler(resp) {
+        document.getElementById('h-rzp-pay').value = resp.razorpay_payment_id;
+        document.getElementById('h-rzp-ord').value = resp.razorpay_order_id;
+        document.getElementById('orderForm').submit();
+      },
+      modal:{ ondismiss() { btn.disabled=false; btn.textContent='⚡ Place Order'; } }
+    });
+    rzp.open();
+  } catch(e) {
+    showToast('Payment error. Please try COD.'); btn.disabled=false; btn.textContent='⚡ Place Order';
+  }
+}
+function formatCard(i){ let v=i.value.replace(/\D/g,'').slice(0,16); i.value=v.replace(/(.{4})/g,'$1 ').trim(); }
+</script>
+{% endblock %}
