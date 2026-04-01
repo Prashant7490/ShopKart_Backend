@@ -18,6 +18,3 @@ email-validator==2.1.1
 passlib[bcrypt]==1.7.4
 python-jose==3.3.0
 
-=======
->>>>>>> d1b70bbb11502b9d5d32d27f4b2457e76499a918
-
