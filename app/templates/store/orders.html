@@ -1,0 +1,69 @@
+{% extends "store/base.html" %}
+{% block title %}My Orders — ShopKart{% endblock %}
+{% block content %}
+<div class="orders-page container">
+  <h2 class="orders-title">My Orders</h2>
+
+  {% if new_order_id %}
+  <div class="success-banner card">
+    <span style="font-size:32px">🎉</span>
+    <div>
+      <p class="success-head">Order Placed Successfully!</p>
+      <p class="success-sub">Order ID: <strong>#{{ new_order_id }}</strong> —
+        <a href="/orders/{{ new_order_id }}" style="color:#1b5e20;text-decoration:underline">Track Order →</a>
+      </p>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if orders %}
+  <div class="orders-list">
+    {% for order in orders %}
+    <div class="order-card card">
+      <div class="order-header">
+        <div>
+          <p class="order-id">Order #{{ order.id }}</p>
+          <p class="order-date">{{ order._fmt_date }}</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          {% if order.payment_status == 'paid' %}
+          <span style="background:#e8f5e9;color:#388e3c;font-size:11px;font-weight:700;padding:3px 8px;border-radius:12px">✅ Paid</span>
+          {% elif order.payment_method == 'cod' %}
+          <span style="background:#fff3e0;color:#e65100;font-size:11px;font-weight:700;padding:3px 8px;border-radius:12px">💵 COD</span>
+          {% endif %}
+          <span class="order-status" style="background:{{'#388e3c' if order.status=='Confirmed' else '#6a1b9a' if order.status=='Shipped' else '#2e7d32' if order.status=='Delivered' else '#1565c0' if order.status=='Processing' else '#c62828'}}">
+            {{ order.status }}
+          </span>
+        </div>
+      </div>
+      <div class="order-body">
+        <div class="order-info">
+          <p class="info-label">DELIVERY ADDRESS</p>
+          <p class="info-val">{{ order.address.get('name','') }} · {{ order.address.get('city','') }}, {{ order.address.get('state','') }}</p>
+        </div>
+        <div class="order-info">
+          <p class="info-label">PAYMENT</p>
+          <p class="info-val" style="text-transform:uppercase">{{ order.payment_method }}</p>
+        </div>
+        <div class="order-info">
+          <p class="info-label">ITEMS / TOTAL</p>
+          <p class="info-val"><b>{{ order.items|length }}</b> item(s) · <b>₹{{ "{:,.0f}".format(order.total_amount) }}</b></p>
+        </div>
+      </div>
+      <div class="order-footer">
+        <span class="track-note">📦 Expected: 3–5 business days</span>
+        <a href="/orders/{{ order.id }}" class="track-btn">Track Order →</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state card" style="max-width:480px;margin:40px auto">
+    <div class="emoji">📦</div>
+    <h3>No orders yet</h3>
+    <p>Your orders will appear here</p>
+    <a href="/products" class="btn-blue" style="margin-top:20px;display:inline-flex">Start Shopping</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

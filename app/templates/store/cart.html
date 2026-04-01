@@ -1,0 +1,107 @@
+{% extends "store/base.html" %}
+{% block title %}My Cart — ShopKart{% endblock %}
+
+{% block content %}
+<div class="cart-page container">
+
+  {% if cart_items %}
+  <div class="cart-main">
+    <div class="cart-header card">
+      <h2>My Cart ({{ cart_items|length }} items)</h2>
+      <p style="color:var(--text-light);font-size:13px;margin-top:4px">
+        {% if delivery == 0 %}🎉 You get FREE Delivery!
+        {% else %}Add ₹{{ 499 - total|int }} more for FREE Delivery{% endif %}
+      </p>
+    </div>
+
+    {% for item in cart_items %}
+    <div class="cart-item card" id="row-{{ item.product.id }}">
+      <a href="/product/{{ item.product.id }}">
+        <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="cart-img"/>
+      </a>
+      <div class="cart-item-info">
+        <p class="cart-brand">{{ item.product.brand }}</p>
+        <a href="/product/{{ item.product.id }}"><p class="cart-name">{{ item.product.name }}</p></a>
+        <div class="cart-meta">
+          {% if item.product.assured %}<span class="badge-assured">✓ Assured</span>{% endif %}
+          {% if item.product.free_delivery %}<span class="badge-free-delivery" style="margin-left:8px">🚚 Free Delivery</span>{% endif %}
+        </div>
+        <div class="cart-pricing">
+          <span class="price-main">₹{{ "{:,}".format(item.product.price|int) }}</span>
+          <span class="price-original" style="margin-left:8px">₹{{ "{:,}".format(item.product.original_price|int) }}</span>
+          <span class="price-discount" style="margin-left:6px">{{ item.product.discount_percent }}% off</span>
+        </div>
+        <div class="cart-actions">
+          <div class="qty-control">
+            <button onclick="updateQty('{{ item.product.id }}', {{ item.quantity - 1 }})">−</button>
+            <span id="qty-{{ item.product.id }}">{{ item.quantity }}</span>
+            <button onclick="updateQty('{{ item.product.id }}', {{ item.quantity + 1 }})">+</button>
+          </div>
+          <button class="remove-btn" onclick="removeItem('{{ item.product.id }}')">Remove</button>
+        </div>
+      </div>
+      <div class="cart-item-total">
+        <p class="item-total-label">Item Total</p>
+        <p class="item-total-val" id="subtotal-{{ item.product.id }}">₹{{ "{:,}".format(item.subtotal|int) }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Price Summary -->
+  <div class="price-summary card">
+    <h3 class="summary-title">PRICE DETAILS</h3>
+    <div class="summary-row">
+      <span>Price ({{ cart_items|length }} items)</span>
+      <span>₹{{ "{:,}".format(total|int) }}</span>
+    </div>
+    <div class="summary-row">
+      <span>Delivery Charges</span>
+      <span {% if delivery == 0 %}class="price-discount"{% endif %}>
+        {% if delivery == 0 %}FREE{% else %}₹{{ delivery }}{% endif %}
+      </span>
+    </div>
+    <hr style="border:none;border-top:1px dashed var(--border);margin:8px 0"/>
+    <div class="summary-row total-row">
+      <span>Total Amount</span>
+      <span>₹{{ "{:,}".format(grand_total|int) }}</span>
+    </div>
+    {% if delivery == 0 %}
+    <p class="savings-note">🎉 You save ₹40 on delivery!</p>
+    {% endif %}
+    <a href="/checkout" class="btn-blue" style="display:flex;justify-content:center;margin-top:16px">
+      PLACE ORDER
+    </a>
+  </div>
+
+  {% else %}
+  <!-- Empty Cart -->
+  <div style="max-width:480px;margin:60px auto">
+    <div class="empty-state card">
+      <div class="emoji">🛒</div>
+      <h3>Your cart is empty!</h3>
+      <p>Add items to get started</p>
+      <a href="/products" class="btn-blue" style="margin-top:24px;display:inline-flex">Shop Now</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function updateQty(productId, qty) {
+  if (qty <= 0) { removeItem(productId); return; }
+  const fd = new FormData();
+  fd.append('quantity', qty);
+  await fetch(`/api/cart/update/${productId}`, {method:'POST', body:fd});
+  location.reload();
+}
+
+async function removeItem(productId) {
+  await fetch(`/api/cart/remove/${productId}`, {method:'POST'});
+  document.getElementById(`row-${productId}`)?.remove();
+  location.reload();
+}
+</script>
+{% endblock %}

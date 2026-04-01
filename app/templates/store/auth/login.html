@@ -1,0 +1,46 @@
+{% extends "store/base.html" %}
+{% block title %}Login — ShopKart{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card card">
+    <div class="auth-header">
+      <h1 class="auth-logo">🛒 ShopKart</h1>
+      <p class="auth-tagline">India ka apna store</p>
+    </div>
+
+    <h2 class="auth-title">Login to your account</h2>
+
+    {% if error %}
+    <div class="alert alert-error">⚠️ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/login" class="auth-form">
+      <input type="hidden" name="next" value="{{ next or '/' }}"/>
+
+      <div class="form-field">
+        <label>Email Address</label>
+        <input type="email" name="email" placeholder="you@example.com" required autofocus/>
+      </div>
+      <div class="form-field">
+        <label>Password</label>
+        <div class="input-wrap">
+          <input type="password" name="password" id="loginPwd" placeholder="Enter password" required/>
+          <button type="button" class="toggle-pwd" onclick="togglePwd('loginPwd',this)">👁️</button>
+        </div>
+      </div>
+
+      <div class="auth-meta">
+        <label class="remember-me">
+          <input type="checkbox"/> Remember me
+        </label>
+        <a href="/forgot-password" class="forgot-link">Forgot Password?</a>
+      </div>
+
+      <button type="submit" class="btn-auth">Login →</button>
+    </form>
+
+    <p class="auth-switch">New to ShopKart? <a href="/signup">Create Account</a></p>
+  </div>
+</div>
+{% endblock %}
